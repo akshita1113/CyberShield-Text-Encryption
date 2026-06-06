@@ -1,0 +1,815 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Encryption — CyberShield</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<!-- CryptoJS for AES & DES -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<style>
+  :root {
+    --bg: #020810;
+    --surface: #0a1628;
+    --border: #0f3460;
+    --accent: #00d4ff;
+    --green: #00ff88;
+    --yellow: #ffd700;
+    --red: #ff2d55;
+    --purple: #b44fff;
+    --text: #c8d8e8;
+    --dim: #4a6080;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridScroll 25s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes gridScroll {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(40px); }
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    opacity: 0.6;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(26px, 5vw, 46px);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(0,212,255,0.5);
+    letter-spacing: 2px;
+  }
+
+  h1 span { color: var(--accent); }
+  .tagline { margin-top: 10px; font-size: 11px; color: var(--dim); letter-spacing: 3px; }
+
+  /* Algorithm tabs */
+  .algo-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .algo-tab {
+    flex: 1;
+    min-width: 100px;
+    padding: 14px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .algo-tab::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.3s;
+  }
+
+  .algo-tab.active::before { transform: scaleX(1); }
+
+  .algo-tab.active {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.08);
+  }
+
+  .algo-tab .tab-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--dim);
+    transition: color 0.3s;
+  }
+
+  .algo-tab.active .tab-name { color: var(--accent); }
+  .algo-tab:hover .tab-name { color: var(--text); }
+
+  .algo-tab .tab-desc {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+
+  .algo-tab .tab-badge {
+    display: inline-block;
+    font-size: 8px;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-top: 6px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .card-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+
+  /* Algo info banner */
+  .algo-info {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    font-size: 11px;
+  }
+
+  .info-item { }
+  .info-item .info-key { color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .info-item .info-val { color: var(--accent); font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; }
+
+  /* Textarea */
+  textarea {
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.6;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(0,212,255,0.1);
+  }
+
+  textarea::placeholder { color: var(--dim); }
+
+  /* Key input */
+  .key-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .key-group { flex: 1; min-width: 200px; }
+  .key-group label { display: block; font-size: 10px; letter-spacing: 3px; color: var(--dim); margin-bottom: 8px; text-transform: uppercase; }
+
+  .key-group input {
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 12px 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.3s;
+    letter-spacing: 2px;
+  }
+
+  .key-group input:focus { border-color: var(--accent); }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  button.btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 14px 20px;
+    border: 1px solid;
+    border-radius: 3px;
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+
+  .btn-encrypt {
+    background: rgba(0,212,255,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-encrypt:hover {
+    background: rgba(0,212,255,0.2);
+    box-shadow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  .btn-decrypt {
+    background: rgba(0,255,136,0.08);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .btn-decrypt:hover {
+    background: rgba(0,255,136,0.15);
+    box-shadow: 0 0 20px rgba(0,255,136,0.25);
+  }
+
+  .btn-clear {
+    background: rgba(255,45,85,0.08);
+    border-color: var(--red);
+    color: var(--red);
+    flex: 0;
+    min-width: 90px;
+  }
+
+  .btn-clear:hover { background: rgba(255,45,85,0.15); }
+
+  /* Output */
+  .output-box {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 16px;
+    min-height: 80px;
+    font-size: 12px;
+    line-height: 1.7;
+    word-break: break-all;
+    color: var(--green);
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .output-box.has-content { border-color: rgba(0,255,136,0.3); }
+  .output-box.error { color: var(--red); border-color: rgba(255,45,85,0.3); }
+
+  .output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* RSA key display */
+  .rsa-keys {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  @media (max-width: 600px) { .rsa-keys { grid-template-columns: 1fr; } }
+
+  .rsa-key-box {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 14px;
+  }
+
+  .rsa-key-box .rsa-key-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--purple);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .rsa-key-box pre {
+    font-size: 10px;
+    color: var(--dim);
+    word-break: break-all;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 11px;
+    margin-top: 8px;
+    min-height: 40px;
+    transition: border-color 0.3s;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--dim);
+  }
+
+  .status-bar.success { border-color: rgba(0,255,136,0.3); }
+  .status-bar.success .status-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .status-bar.error { border-color: rgba(255,45,85,0.3); }
+  .status-bar.error .status-dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .status-bar.processing .status-dot { background: var(--yellow); animation: pulse 0.8s infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Hidden panels */
+  .algo-panel { display: none; }
+  .algo-panel.active { display: block; }
+
+  /* Gen key btn */
+  .gen-btn {
+    background: rgba(180,79,255,0.1);
+    border: 1px solid var(--purple);
+    border-radius: 3px;
+    color: var(--purple);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+
+  .gen-btn:hover { background: rgba(180,79,255,0.2); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="logo">◈ CyberShield Security ◈</div>
+    <h1>TEXT <span>ENCRYPTION</span></h1>
+    <div class="tagline">// AES · DES · RSA CRYPTOGRAPHIC ENGINE //</div>
+  </div>
+
+  <!-- Algorithm Tabs -->
+  <div class="algo-tabs">
+    <div class="algo-tab active" onclick="switchAlgo('aes')">
+      <div class="tab-name">AES</div>
+      <div class="tab-desc">Advanced Encryption</div>
+      <div class="tab-badge" style="background:rgba(0,212,255,0.15);color:var(--accent)">RECOMMENDED</div>
+    </div>
+    <div class="algo-tab" onclick="switchAlgo('des')">
+      <div class="tab-name">DES</div>
+      <div class="tab-desc">Data Encryption Std</div>
+      <div class="tab-badge" style="background:rgba(255,215,0,0.15);color:var(--yellow)">LEGACY</div>
+    </div>
+    <div class="algo-tab" onclick="switchAlgo('rsa')">
+      <div class="tab-name">RSA</div>
+      <div class="tab-desc">Asymmetric Cipher</div>
+      <div class="tab-badge" style="background:rgba(180,79,255,0.15);color:var(--purple)">ASYMMETRIC</div>
+    </div>
+  </div>
+
+  <!-- ============ AES PANEL ============ -->
+  <div class="algo-panel active" id="panel-aes">
+    <div class="card">
+      <div class="algo-info">
+        <div class="info-item"><div class="info-key">Algorithm</div><div class="info-val">AES-256</div></div>
+        <div class="info-item"><div class="info-key">Key Size</div><div class="info-val">256 bit</div></div>
+        <div class="info-item"><div class="info-key">Type</div><div class="info-val">Symmetric</div></div>
+      </div>
+
+      <div class="card-label">▸ INPUT MESSAGE</div>
+      <textarea id="aes-input" placeholder="Type your secret message here..."></textarea>
+
+      <div class="key-row">
+        <div class="key-group">
+          <label>Secret Key (passphrase)</label>
+          <input type="text" id="aes-key" placeholder="Enter your secret key..." value="MySecretKey2024">
+        </div>
+        <button class="gen-btn" onclick="genAESKey()">⚡ GENERATE KEY</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-encrypt" onclick="aesEncrypt()">🔒 ENCRYPT</button>
+        <button class="btn btn-decrypt" onclick="aesDecrypt()">🔓 DECRYPT</button>
+        <button class="btn btn-clear" onclick="clearAES()">✕ CLEAR</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="output-header">
+        <div class="card-label" style="margin-bottom:0">▸ OUTPUT</div>
+        <button class="copy-btn" onclick="copyOutput('aes-output')">COPY</button>
+      </div>
+      <div class="output-box" id="aes-output">Encrypted / decrypted result will appear here...</div>
+      <div class="status-bar" id="aes-status">
+        <div class="status-dot"></div>
+        <span>Ready — enter message and key, then click Encrypt or Decrypt</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DES PANEL ============ -->
+  <div class="algo-panel" id="panel-des">
+    <div class="card">
+      <div class="algo-info">
+        <div class="info-item"><div class="info-key">Algorithm</div><div class="info-val">3DES</div></div>
+        <div class="info-key" style="display:none"></div>
+        <div class="info-item"><div class="info-key">Key Size</div><div class="info-val">168 bit</div></div>
+        <div class="info-item"><div class="info-key">Type</div><div class="info-val">Symmetric</div></div>
+      </div>
+      <div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:3px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:var(--yellow)">
+        ⚠ DES is considered insecure for modern use. Demonstrated here for educational purposes only.
+      </div>
+
+      <div class="card-label">▸ INPUT MESSAGE</div>
+      <textarea id="des-input" placeholder="Type your secret message here..."></textarea>
+
+      <div class="key-row">
+        <div class="key-group">
+          <label>Secret Key (passphrase)</label>
+          <input type="text" id="des-key" placeholder="Enter your secret key..." value="DESKeyDemo">
+        </div>
+        <button class="gen-btn" onclick="genDESKey()">⚡ GENERATE KEY</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-encrypt" onclick="desEncrypt()">🔒 ENCRYPT</button>
+        <button class="btn btn-decrypt" onclick="desDecrypt()">🔓 DECRYPT</button>
+        <button class="btn btn-clear" onclick="clearDES()">✕ CLEAR</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="output-header">
+        <div class="card-label" style="margin-bottom:0">▸ OUTPUT</div>
+        <button class="copy-btn" onclick="copyOutput('des-output')">COPY</button>
+      </div>
+      <div class="output-box" id="des-output">Encrypted / decrypted result will appear here...</div>
+      <div class="status-bar" id="des-status">
+        <div class="status-dot"></div>
+        <span>Ready — enter message and key, then click Encrypt or Decrypt</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RSA PANEL ============ -->
+  <div class="algo-panel" id="panel-rsa">
+    <div class="card">
+      <div class="algo-info">
+        <div class="info-item"><div class="info-key">Algorithm</div><div class="info-val">RSA</div></div>
+        <div class="info-item"><div class="info-key">Key Size</div><div class="info-val">2048 bit</div></div>
+        <div class="info-item"><div class="info-key">Type</div><div class="info-val">Asymmetric</div></div>
+      </div>
+      <div style="background:rgba(180,79,255,0.06);border:1px solid rgba(180,79,255,0.2);border-radius:3px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:var(--purple)">
+        ℹ RSA uses a public key to encrypt and a private key to decrypt. Generate a key pair first.
+      </div>
+
+      <div class="btn-row" style="margin-top:0;margin-bottom:20px">
+        <button class="gen-btn" style="flex:1" onclick="generateRSAKeys()">⚡ GENERATE RSA KEY PAIR</button>
+      </div>
+
+      <div class="rsa-keys" id="rsaKeyDisplay" style="display:none">
+        <div class="rsa-key-box">
+          <div class="rsa-key-label">🔑 Public Key (Encrypt with this)</div>
+          <pre id="rsa-pub-display"></pre>
+        </div>
+        <div class="rsa-key-box">
+          <div class="rsa-key-label">🗝 Private Key (Decrypt with this)</div>
+          <pre id="rsa-priv-display"></pre>
+        </div>
+      </div>
+
+      <div style="margin-top:20px">
+        <div class="card-label">▸ INPUT MESSAGE</div>
+        <textarea id="rsa-input" placeholder="Type your message here... (RSA works best for short messages)" style="min-height:80px"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-encrypt" onclick="rsaEncrypt()">🔒 ENCRYPT (Public Key)</button>
+        <button class="btn btn-decrypt" onclick="rsaDecrypt()">🔓 DECRYPT (Private Key)</button>
+        <button class="btn btn-clear" onclick="clearRSA()">✕ CLEAR</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="output-header">
+        <div class="card-label" style="margin-bottom:0">▸ OUTPUT</div>
+        <button class="copy-btn" onclick="copyOutput('rsa-output')">COPY</button>
+      </div>
+      <div class="output-box" id="rsa-output">Generate a key pair and enter a message first...</div>
+      <div class="status-bar" id="rsa-status">
+        <div class="status-dot"></div>
+        <span>Ready — generate key pair first, then encrypt/decrypt</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="card">
+    <div class="card-label">▸ HOW EACH ALGORITHM WORKS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:4px">
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.15);border-radius:3px;padding:16px">
+        <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px">AES-256</div>
+        <div style="font-size:11px;line-height:1.7;color:var(--dim)">Advanced Encryption Standard. Uses the same key for encrypt & decrypt (symmetric). 256-bit key means 2²⁵⁶ possible keys — unbreakable by brute force. Used by governments and banks worldwide.</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,215,0,0.15);border-radius:3px;padding:16px">
+        <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--yellow);margin-bottom:8px">DES / 3DES</div>
+        <div style="font-size:11px;line-height:1.7;color:var(--dim)">Data Encryption Standard (1977). Original 56-bit DES was cracked in 1999. Triple-DES applies it 3× for stronger encryption. Now deprecated in favor of AES. Important for understanding crypto history.</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(180,79,255,0.15);border-radius:3px;padding:16px">
+        <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--purple);margin-bottom:8px">RSA</div>
+        <div style="font-size:11px;line-height:1.7;color:var(--dim)">Asymmetric encryption using two keys: public (share freely) + private (keep secret). Based on difficulty of factoring large prime numbers. Used in HTTPS, SSH, digital signatures, and key exchange.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== TAB SWITCHING =====
+function switchAlgo(algo) {
+  document.querySelectorAll('.algo-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['aes','des','rsa'][i] === algo);
+  });
+  document.querySelectorAll('.algo-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + algo).classList.add('active');
+}
+
+// ===== HELPERS =====
+function setStatus(id, type, msg) {
+  const bar = document.getElementById(id);
+  bar.className = 'status-bar ' + type;
+  bar.querySelector('span').textContent = msg;
+}
+
+function setOutput(id, text, isError = false) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'output-box' + (isError ? ' error' : (text && text !== 'Encrypted / decrypted result will appear here...' ? ' has-content' : ''));
+}
+
+function copyOutput(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'COPIED!';
+    setTimeout(() => btn.textContent = 'COPY', 1500);
+  });
+}
+
+function randomKey(len) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+  return Array.from({length: len}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+// ===== AES =====
+function genAESKey() {
+  document.getElementById('aes-key').value = randomKey(24);
+}
+
+function aesEncrypt() {
+  const msg = document.getElementById('aes-input').value.trim();
+  const key = document.getElementById('aes-key').value.trim();
+  if (!msg) { setStatus('aes-status','error','❌ Please enter a message to encrypt'); return; }
+  if (!key) { setStatus('aes-status','error','❌ Please enter a secret key'); return; }
+  try {
+    setStatus('aes-status','processing','⚡ Encrypting...');
+    const encrypted = CryptoJS.AES.encrypt(msg, key).toString();
+    setOutput('aes-output', encrypted);
+    setStatus('aes-status','success',`✅ AES-256 encrypted successfully — ${encrypted.length} chars ciphertext`);
+  } catch(e) {
+    setStatus('aes-status','error','❌ Encryption failed: ' + e.message);
+  }
+}
+
+function aesDecrypt() {
+  const cipher = document.getElementById('aes-input').value.trim();
+  const key = document.getElementById('aes-key').value.trim();
+  if (!cipher) { setStatus('aes-status','error','❌ Paste the encrypted text in the input box'); return; }
+  if (!key) { setStatus('aes-status','error','❌ Please enter the secret key'); return; }
+  try {
+    setStatus('aes-status','processing','⚡ Decrypting...');
+    const decrypted = CryptoJS.AES.decrypt(cipher, key).toString(CryptoJS.enc.Utf8);
+    if (!decrypted) throw new Error('Wrong key or corrupted ciphertext');
+    setOutput('aes-output', decrypted);
+    setStatus('aes-status','success','✅ AES-256 decrypted successfully');
+  } catch(e) {
+    setOutput('aes-output', 'Decryption failed — wrong key or invalid ciphertext', true);
+    setStatus('aes-status','error','❌ ' + e.message);
+  }
+}
+
+function clearAES() {
+  document.getElementById('aes-input').value = '';
+  setOutput('aes-output', 'Encrypted / decrypted result will appear here...');
+  setStatus('aes-status','','Ready');
+}
+
+// ===== DES =====
+function genDESKey() {
+  document.getElementById('des-key').value = randomKey(16);
+}
+
+function desEncrypt() {
+  const msg = document.getElementById('des-input').value.trim();
+  const key = document.getElementById('des-key').value.trim();
+  if (!msg) { setStatus('des-status','error','❌ Please enter a message to encrypt'); return; }
+  if (!key) { setStatus('des-status','error','❌ Please enter a secret key'); return; }
+  try {
+    setStatus('des-status','processing','⚡ Encrypting...');
+    const encrypted = CryptoJS.TripleDES.encrypt(msg, key).toString();
+    setOutput('des-output', encrypted);
+    setStatus('des-status','success',`✅ 3DES encrypted successfully — ${encrypted.length} chars ciphertext`);
+  } catch(e) {
+    setStatus('des-status','error','❌ Encryption failed: ' + e.message);
+  }
+}
+
+function desDecrypt() {
+  const cipher = document.getElementById('des-input').value.trim();
+  const key = document.getElementById('des-key').value.trim();
+  if (!cipher) { setStatus('des-status','error','❌ Paste the encrypted text in the input box'); return; }
+  if (!key) { setStatus('des-status','error','❌ Please enter the secret key'); return; }
+  try {
+    setStatus('des-status','processing','⚡ Decrypting...');
+    const decrypted = CryptoJS.TripleDES.decrypt(cipher, key).toString(CryptoJS.enc.Utf8);
+    if (!decrypted) throw new Error('Wrong key or corrupted ciphertext');
+    setOutput('des-output', decrypted);
+    setStatus('des-status','success','✅ 3DES decrypted successfully');
+  } catch(e) {
+    setOutput('des-output', 'Decryption failed — wrong key or invalid ciphertext', true);
+    setStatus('des-status','error','❌ ' + e.message);
+  }
+}
+
+function clearDES() {
+  document.getElementById('des-input').value = '';
+  setOutput('des-output', 'Encrypted / decrypted result will appear here...');
+  setStatus('des-status','','Ready');
+}
+
+// ===== RSA (using SubtleCrypto Web API) =====
+let rsaPublicKey = null;
+let rsaPrivateKey = null;
+
+async function generateRSAKeys() {
+  setStatus('rsa-status','processing','⚡ Generating 2048-bit RSA key pair...');
+  try {
+    const keyPair = await window.crypto.subtle.generateKey(
+      { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+      true, ['encrypt', 'decrypt']
+    );
+    rsaPublicKey = keyPair.publicKey;
+    rsaPrivateKey = keyPair.privateKey;
+
+    const pubExported = await window.crypto.subtle.exportKey('spki', rsaPublicKey);
+    const privExported = await window.crypto.subtle.exportKey('pkcs8', rsaPrivateKey);
+
+    const pubB64 = btoa(String.fromCharCode(...new Uint8Array(pubExported)));
+    const privB64 = btoa(String.fromCharCode(...new Uint8Array(privExported)));
+
+    document.getElementById('rsa-pub-display').textContent = formatPEM(pubB64, 'PUBLIC KEY');
+    document.getElementById('rsa-priv-display').textContent = formatPEM(privB64, 'PRIVATE KEY');
+    document.getElementById('rsaKeyDisplay').style.display = 'grid';
+
+    setStatus('rsa-status','success','✅ RSA-2048 key pair generated — ready to encrypt');
+  } catch(e) {
+    setStatus('rsa-status','error','❌ Key generation failed: ' + e.message);
+  }
+}
+
+function formatPEM(b64, type) {
+  const lines = b64.match(/.{1,64}/g).join('\n');
+  return `-----BEGIN ${type}-----\n${lines}\n-----END ${type}-----`;
+}
+
+async function rsaEncrypt() {
+  if (!rsaPublicKey) { setStatus('rsa-status','error','❌ Generate a key pair first'); return; }
+  const msg = document.getElementById('rsa-input').value.trim();
+  if (!msg) { setStatus('rsa-status','error','❌ Please enter a message'); return; }
+  try {
+    setStatus('rsa-status','processing','⚡ Encrypting with public key...');
+    const encoded = new TextEncoder().encode(msg);
+    const encrypted = await window.crypto.subtle.encrypt({ name: 'RSA-OAEP' }, rsaPublicKey, encoded);
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+    setOutput('rsa-output', b64);
+    setStatus('rsa-status','success',`✅ RSA encrypted — ${b64.length} chars (only private key can decrypt)`);
+  } catch(e) {
+    setOutput('rsa-output', 'Encryption failed: message may be too long for RSA direct encryption', true);
+    setStatus('rsa-status','error','❌ ' + e.message + ' (keep message short — use AES for long text)');
+  }
+}
+
+async function rsaDecrypt() {
+  if (!rsaPrivateKey) { setStatus('rsa-status','error','❌ Generate a key pair first'); return; }
+  const cipher = document.getElementById('rsa-input').value.trim();
+  if (!cipher) { setStatus('rsa-status','error','❌ Paste RSA ciphertext in the input box'); return; }
+  try {
+    setStatus('rsa-status','processing','⚡ Decrypting with private key...');
+    const bytes = Uint8Array.from(atob(cipher), c => c.charCodeAt(0));
+    const decrypted = await window.crypto.subtle.decrypt({ name: 'RSA-OAEP' }, rsaPrivateKey, bytes);
+    const text = new TextDecoder().decode(decrypted);
+    setOutput('rsa-output', text);
+    setStatus('rsa-status','success','✅ RSA decrypted successfully with private key');
+  } catch(e) {
+    setOutput('rsa-output', 'Decryption failed — wrong key or invalid ciphertext', true);
+    setStatus('rsa-status','error','❌ Decryption failed — ensure you use the matching private key');
+  }
+}
+
+function clearRSA() {
+  document.getElementById('rsa-input').value = '';
+  setOutput('rsa-output', 'Generate a key pair and enter a message first...');
+  setStatus('rsa-status','','Ready');
+}
+</script>
+</body>
+</html>
