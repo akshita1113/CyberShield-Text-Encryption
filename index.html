@@ -674,14 +674,13 @@ function aesDecrypt() {
   const cipher = document.getElementById('aes-input').value.trim();
   const key = document.getElementById('aes-key').value.trim();
   if (!cipher) { setStatus('aes-status','error','❌ Paste the encrypted text in the input box'); return; }
-  if (!key) { setStatus('aes-status','error','❌ Please enter the secret key'); return; }
+  if (!key)    { setStatus('aes-status','error','❌ Please enter the secret key'); return; }
   try {
     setStatus('aes-status','processing','⚡ Decrypting...');
     const bytes = CryptoJS.AES.decrypt(cipher, key);
+    if (!bytes || bytes.sigBytes <= 0) throw new Error('Wrong key or corrupted ciphertext');
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-    if (!decrypted || decrypted.length === 0) {
-      throw new Error('Wrong key or corrupted ciphertext');
-    }
+    if (!decrypted) throw new Error('Wrong key or corrupted ciphertext');
     setOutput('aes-output', decrypted);
     setStatus('aes-status','success','✅ AES-256 decrypted successfully');
   } catch(e) {
