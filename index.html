@@ -677,8 +677,11 @@ function aesDecrypt() {
   if (!key) { setStatus('aes-status','error','❌ Please enter the secret key'); return; }
   try {
     setStatus('aes-status','processing','⚡ Decrypting...');
-    const decrypted = CryptoJS.AES.decrypt(cipher, key).toString(CryptoJS.enc.Utf8);
-    if (!decrypted) throw new Error('Wrong key or corrupted ciphertext');
+    const bytes = CryptoJS.AES.decrypt(cipher, key);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    if (!decrypted || decrypted.length === 0) {
+      throw new Error('Wrong key or corrupted ciphertext');
+    }
     setOutput('aes-output', decrypted);
     setStatus('aes-status','success','✅ AES-256 decrypted successfully');
   } catch(e) {
